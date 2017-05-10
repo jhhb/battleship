@@ -15,6 +15,8 @@ public class Battleship {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        
+        Game game = new Game();
         // TODO code application logic here
     }
     
