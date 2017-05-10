@@ -14,7 +14,7 @@ import java.util.Random;
  *
  * @author jamesboyle
  */
-public class Game {
+public class Board {
     
     //Game needs
         //Random initial configuration
@@ -36,7 +36,7 @@ public class Game {
     
     private List<List<Integer>> gameBoard = new ArrayList<List<Integer>>();
     
-    public Game(){
+    public Board(){
         
           for(int i = 0; i < 100; i++){
            //this.initializeEmptyBoard();

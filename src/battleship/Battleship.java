@@ -16,7 +16,7 @@ public class Battleship {
      */
     public static void main(String[] args) {
         
-        Game game = new Game();
+        Board board = new Board();
         // TODO code application logic here
     }
     
