@@ -16,40 +16,15 @@ import java.util.Random;
  */
 public class Board {
     
-    //Game needs
-        //Random initial configuration
-        //Neural net
-        //GA functions
-        //Current state
-        //Make move (look through untouched squares and attack one)
     private final int NUMBER_OF_ROWS = 10;
     private final int NUMBER_OF_COLUMNS = 10;
-//    private final int CARRIER_LENGTH = 5;
-//    private final int BATTLESHIP_LENGTH = 4;
-//    private final int CRUISER_LENGTH = 3;
-//    private final int SUBMARINE_LENGTH = 3;
-//    private final int DESTROYER_LENGTH = 2;
-    
     private final int shipLengths [] = {5,4,3,3,2};
-    private final Random rand = new Random();
-    
-    
+    private final Random rand = new Random();  
     private List<List<Integer>> gameBoard = new ArrayList<List<Integer>>();
     
     public Board(){
-        
-          for(int i = 0; i < 100; i++){
-           //this.initializeEmptyBoard();
-            //System.out.println(this.setShips(this.shipLengths));
-            this.initializeEmptyBoard();
-
-            if(this.setShips(this.shipLengths) != 17){
-               System.exit(-1);
-            }
-        }
-        
-        
-        //this.setShips(this.shipLengths);
+        this.initializeEmptyBoard();
+        this.setShips(this.shipLengths);
     }
     
     
@@ -121,24 +96,9 @@ public class Board {
             
         }  
         int sum = 0;
-        for(int p = 0; p < 10; p++){
-            for(int s = 0; s < 10; s++ ){
-                if(this.gameBoard.get(p).get(s) == 1){
-                    sum+=1;
-                }
-                                    System.out.print(this.gameBoard.get(p).get(s));
-
-            }
-            System.out.print("\n");
-
-        }
-       // System.out.println();
-       System.out.println(sum);
         return sum;
     }
-    
-    
-    //need to fix start 
+        
     private ArrayList<List<Integer>> collectStartPositionsHorizontal(int shipLength){
         
         ArrayList<List<Integer>> startPositions = new ArrayList<List<Integer>>();
@@ -191,10 +151,9 @@ public class Board {
     }
     
     /* This is bad; dont do twice */
-    public ArrayList<Integer> serializeBoard(){
+    public ArrayList<Integer> getSerializedBoard(){
         
         ArrayList<Integer> list = new ArrayList<Integer>();
-        
         
         for(int i = 0; i < this.gameBoard.size(); i++){
             for(int j = 0; j < this.gameBoard.get(i).size(); j++){
