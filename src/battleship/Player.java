@@ -108,7 +108,11 @@ public class Player {
         this.lossCounterAsParasite +=1;
     }
     
+    /* 
+    We get our next index to attack from our understanding of the opponent board.
+    */
     public int getAttackIndex(){
+        //this is a handy way to tell us when we have won--there are 0 spaces of the enemy left so we know we win.
         if(this.numberOfEnemyShipSquaresRemaining == 0){
             return -1;
         }
@@ -121,6 +125,8 @@ public class Player {
     
     //Attack gets called from the attacker and "attacks" a target with a given index.
     //The function assumes that the index it gets from the neural net is a valid one that has not already been hit.
+    
+    //In this function, I am not actually editing or changing the enemy board, JUST the host's understanding of the board.
     public void attack(Player target, int indexToAttackEnemy){
         
         //can be 0 or 1 since a player only has 0 or 1 for their own board
@@ -135,10 +141,7 @@ public class Player {
         //No hit, so we set a -1 and do nothing else.
         else{
             this.opponentBoard.set(indexToAttackEnemy, -1);
-        }
-                  
-        //attack a target and update own board, their board, update numberOfShipsRemaining
-        //add in evolve shit
+        }                  
     }
     
     //the instance that this method is called on returns the value of the board for that instance at the given index.
@@ -149,16 +152,15 @@ public class Player {
     
     /* THIS IS A DUMMY FUNCTION RIGHT NOW */
     /* You guys need to fill in this part */
-    /* I am using these indexes from 0 to 100 to test */
+    /* I am using these indexes from 0 to 99 to test */
+    /*We need to avoid looking at spaces we have already hit*/
     private int getIndexToAttackFromNeuralNet(ArrayList<Integer> enemyBoard){
         
-        //HOW DO WE AVOID LOOKING AT SPACES WE HAVE ALREADY HIT?
+        //all the code in this function will be replaced with the real NN stuff. 
         if(!this.indexes.isEmpty()){
             int result = this.indexes.get(0);
             this.indexes.remove(0);
-            return result; 
-        // -100000;
-            
+            return result;             
         }
         else{
             System.out.println("indexes empty");

@@ -11,6 +11,39 @@ import java.util.Random;
 /**
  *
  * @author jamesboyle
+ * 
+ * 
+ *********************************************************************************************************
+ * THINGS TO LOOK AT 
+ * 
+ * 1. Add the Neural net functionality in the Player class
+ *      A. This will involve making changes to the attack function, the getIndexToAttackFromNeuralNet function, and the various 
+ *         objects and functions used by those methods.
+ *      B. It will be important to think of how to prevent already hit board positions from being selected by the neural net again. I think
+ *         that this could be done by just using a temporary set of edge weights for making the decisions, while preserving the real edge weights in
+ *         the edgeWeights variable. You would set the edgeWeight to zero for the decision-making edgeWeights for a given position (0 through 99) after
+ *         you hit at a position
+ *      C. In order to test the GA without any of the neural net index selection capabilities, I am using "indexes" to select indexes.
+ *         All I am doing is pushing numbers 0 through 99 into that array, and then goign in order, 0 through 99, attackign each index.
+ *      D. I am using setEdgeWeightsDummy to set initial edgeWeights so that I can test the GA code. I think you should replace my setEdgeWeightsDummy function
+ *         calls with a real setEdgeWeights function. It should only be used at the beginning of the program when we dont have initial weights.
+ *         Later on, after the first iteration, when we do have initial weights, we use the second constructor for the Players that takes the evolved
+ *         edge weights as a parameter. 
+ * 2. Check my Boltzmann calculation. I'm not using any kind of scale but I think that might be fine for what we are doing.
+ * 3. Please also check my fitness calculation. It seemed pretty straight-forward to me but I'm a retard with math and math symbols
+ * 4. In crossoverWrapper, do we want all those -1s? those were from oru original GA code.
+ * 
+ * TODOs:
+ *  -verify that players are actually "winning" games by checking their boards to make sure that this.opponentBoard shows 1s covering the enemy's ships
+ * 
+ * 
+ *         //Important questions:
+            //What range of initial edge weights do we pick?
+            //How do we evolve when we have edge weights that are numbers in a range and not just 0 or 1?
+                
+ * 
+ *********************************************************************************************************
+
  */
 public class Battleship {
 
@@ -18,14 +51,11 @@ public class Battleship {
      * @param args the command line arguments
      */
     public static Random rand = new Random();
+    public static double crossoverProbability = 0.00;
+    public static double mutationProbability = 0.00;
     
     public static void main(String[] args) {
         
-        
-        //Important questions:
-            //What range of edge weights do we pick?
-            //How do we evolve when we have edge weights that are numbers in a range and not just 0 or 1?
-                
         //We want to have each member of the parasite population play against each member of the host population.
         //So, if we have 10 parasites and 10 hosts, we want them each to play against each other the same number of times.
         //we want all this playing to happen before we perform any evolution so that we can accurately calculate the fitness
@@ -33,9 +63,6 @@ public class Battleship {
         
         wrapper();
        
-        
-        
-        // TODO code application logic here
     }
     
     public static void wrapper(){
@@ -47,24 +74,40 @@ public class Battleship {
         ArrayList<Player> hosts = new ArrayList<Player>();
         ArrayList<Player> parasites = new ArrayList<Player>();
         
+        /* Initializes hosts and parasites */
         for(int i = 0; i < NUMBER_OF_TEAM_MEMBERS; i++){
             hosts.add(new Player());
             parasites.add(new Player());
         }
        
-        
+        /* We give the hosts 10 chances to be hosts and 10 chances to be parasites, and we do the same for hte parasites */
         while(iterationCounter < 20){
+            
             ArrayList<Player> temp = new ArrayList<Player>();
+            
+            /* This function "plays" all the battleship games for the host and parasite populations. each host plays against each parasite
+                For 10 hosts and 10 parasites, you get 100 games.
+            
+                This function only adds information to the Player objects in hosts and parasites and doesn't need to return anything. We then access this info
+                when we calculate the evolution, new edge weights.
+            */
+            
+            
             playGamesForPopulations(hosts, parasites);
+            
             ArrayList<ArrayList<Double>> newEdgeWeights = new ArrayList<ArrayList<Double>>();
+            
+            /* We evolve the host population to produce new edge weights. This includes mutation */
             newEdgeWeights = evolvePopulations(hosts, parasites);
-            //this function should go throw and just replace the hosts Array of Array of Doubles with a new one where
-            //all the edge weights are replaced
+
+            /* We create NEW hosts using the new edge weights */
             hosts = createNewPlayersWithNewEdgeWeights(hosts, newEdgeWeights);
             
-            //reuses old edge weights but clears the parasites -- new board, new everything
+            /*We create NEW parasites but with the same edge weights--we need to keep the old parasite edge weights because
+            They still need a chance to be hosts*/
             parasites = createNewParasitesWithOldEdgeWeights(parasites);
             
+            /*We flip the parasites and hosts*/
             temp = parasites;
             parasites = hosts;
             hosts = temp;
@@ -92,17 +135,19 @@ public class Battleship {
         return parasites;
     }
     
-    //this should have each host play against each parasite.
+    /*Each host and parasite play a game with each other.
+      After the game is over, we "reset indexes" which just makes it so the same host and same parasite can play games against other parasites and hosts
+      In the same iteration. This is just done for testing purposes.
+    */
     public static void playGamesForPopulations(ArrayList<Player> hosts, ArrayList<Player> parasites){
-        
-        int[][] multi = new int[hosts.size()][parasites.size()];
-        //2d array of hosts x parasites initialized to 0
-        
+                
         for(int i = 0; i < hosts.size(); i++){
             for(int j = 0; j < parasites.size(); j++){
                     playGame(hosts.get(i), parasites.get(j), j);
                     
-                    //HERE I AM USING "Dummy indexes" that allow me to actually run the code. 
+                    //HERE I AM USING "Dummy indexes" that allow me to actually run the code. I have to reset the indexes after each iteration
+                    //BEcause I pick the next index to attack by popping off an index in an array, and eventually if you dont reset the indexes
+                    //You will get an out of bounds error after you hit all 100 of them.
                     hosts.get(i).resetIndexes();
                     parasites.get(j).resetIndexes();
 
@@ -111,8 +156,11 @@ public class Battleship {
         //at the end of this, all hosts have played against all parasites.
     }
     
+    /* This function first determines who goes first, then it has each player take turns getting an index and attacking
+    their enemy
+    */
     public static void playGame(Player host, Player parasite, int parasiteIndex){
-        //we can determine who goes first through p1 and p2, outside of this function
+
         boolean noWinner = true;
         
         //host attacks first
@@ -120,19 +168,27 @@ public class Battleship {
             while(noWinner){
                 
                 int hostAttackIndex = host.getAttackIndex();
-                //could be off by one here?
+                
                 //return -1 when all enemy ships are sunk;
                 if(hostAttackIndex == -1){
                     noWinner = false;
+                    
+                    //if the parasite loses, we increment its loss counter. this is needed for fitness calculation
                     parasite.incrementLossCounterAsParasite();
+                    
+                    //since the host wins, we add the parasite's index to the victories array inside the host. 
+                    //this is done so that we can easily iterate the parasites the host defeated when calculating fitness
+                    
                     host.updateVictories(parasiteIndex);
                     break;
                 }
                 else{
-                host.attack(parasite, hostAttackIndex);
+                    //if we didnt win, we have the host attack the parasite
+                    //we need the else statement to avoid an out of bounds
+                    host.attack(parasite, hostAttackIndex);
                 }
               
-                
+                //Everything else in this function is a similar but flipped case from the above.
                 int parasiteAttackIndex = parasite.getAttackIndex();
                 
                 if(parasiteAttackIndex == -1){
@@ -155,7 +211,7 @@ public class Battleship {
                     break;
                 }
                 else{
-                                    parasite.attack(host, parasiteAttackIndex);
+                    parasite.attack(host, parasiteAttackIndex);
                 }
                 
                 int hostAttackIndex = host.getAttackIndex();
@@ -175,11 +231,14 @@ public class Battleship {
     //I am assuming that we only evolve the hosts, which is what I think we should be doing based on paper
     public static ArrayList<ArrayList<Double>> evolvePopulations(ArrayList<Player> hosts, ArrayList<Player> parasites){
         
-        //double? 
+        /*Calculates the fitness for all the hosts */
         ArrayList<Double> fitnessArray = calculateFitnessForHosts(hosts, parasites);
+        
+        /* Selects a breeding pool of hosts using boltzmann */
         ArrayList<Player> breedingPoolOfHosts = boltzmannSelection(hosts, fitnessArray);
-        double crossoverProbability = 0.00;
-        double mutationProbability = 0.00;
+        
+        //NEED TO CHANGE THESE
+       
         
         //crossoverWrapper works with the breeding pool of PLAYERS and spits out a List of List of doubles to represent the edge weights for all the players
         ArrayList<ArrayList<Double>> crossedOverHosts = crossoverWrapper(breedingPoolOfHosts, crossoverProbability);
@@ -199,6 +258,8 @@ public class Battleship {
     
         
     //Returns mutated edge weights
+    //What we are doing is just incrementing or decrementing by 5% randomly.
+    //Maybe we can experiemnt with a smarter way of doing this
     public static ArrayList<Double> gaMutate(ArrayList<Double> edgeWeightsForPlayer, double mutationProbability){
                 
         ArrayList<Double> edgeWeights = new ArrayList();
@@ -237,11 +298,14 @@ public class Battleship {
         ArrayList<Double> child2 = new ArrayList<Double>(); 
                 
         //Want to pass in the arrayList of edge weights into the crossover function
+        // -1? or nah?
         while(i < breedingPool.size() - 1){
 
             double randomProbability = (double)rand.nextInt()/(double)Integer.MAX_VALUE;
             if(randomProbability <= crossoverProbability){
-                    int crossPoint = rand.nextInt(breedingPool.size() -1 );
+                    
+//size -1??
+                    int crossPoint = rand.nextInt(breedingPool.size() );
                     
                     child1 = onePointCrossover(breedingPool.get(i).getEdgeWeights(), breedingPool.get(i + 1).getEdgeWeights(), crossPoint);
                     child2 = onePointCrossover(breedingPool.get(i+1).getEdgeWeights(), breedingPool.get(i).getEdgeWeights(), crossPoint);
@@ -258,9 +322,10 @@ public class Battleship {
             if (newCandidates.size() >= breedingPool.size()) {
                     if (breedingPool.size() % 2 == 0) {
                             break;
-                    } else {
-                            newCandidates.add(breedingPool.get(i).getEdgeWeights());
-                            i += 1;
+                    } 
+                    else {
+                        newCandidates.add(breedingPool.get(i).getEdgeWeights());
+                        i += 1;
                     }
             }
         }
@@ -316,14 +381,14 @@ public class Battleship {
             double randomProbability =  (double)rand.nextInt()/ (double)Integer.MAX_VALUE;
 
             double numerator = efitness.get(randomIndex);
-            
-            System.out.println(numerator / denom);
-            
+             System.out.println(numerator / denom);
             if(randomProbability <= numerator/denom){
+              
               breedingPopulation.add(hostsToSelect.get(randomIndex));
               counter+=1;
             }
         }
+        System.out.println();
 
         return breedingPopulation;      
     }
