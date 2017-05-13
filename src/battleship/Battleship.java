@@ -94,7 +94,7 @@ public class Battleship {
             
             
             playGamesForPopulations(hosts, parasites);
-            
+            System.out.println("finished round " + iterationCounter + " of games");
             ArrayList<ArrayList<Double>> newEdgeWeights = new ArrayList<ArrayList<Double>>();
             
             /* We evolve the host population to produce new edge weights. This includes mutation */
@@ -144,12 +144,11 @@ public class Battleship {
         for(int i = 0; i < hosts.size(); i++){
             for(int j = 0; j < parasites.size(); j++){
                     playGame(hosts.get(i), parasites.get(j), j);
-                    
+                    System.out.println("finished game " + i + "," + j);
                     //HERE I AM USING "Dummy indexes" that allow me to actually run the code. I have to reset the indexes after each iteration
                     //BEcause I pick the next index to attack by popping off an index in an array, and eventually if you dont reset the indexes
                     //You will get an out of bounds error after you hit all 100 of them.
-                    hosts.get(i).resetIndexes();
-                    parasites.get(j).resetIndexes();
+                   
 
             }
         }
