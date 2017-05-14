@@ -14,32 +14,15 @@ import java.util.Random;
  * 
  * 
  *********************************************************************************************************
- * THINGS TO LOOK AT 
+ * THINGS TO DO 
  * 
- * 1. Add the Neural net functionality in the Player class
- *      A. This will involve making changes to the attack function, the `AttackFromNeuralNet function, and the various 
- *         objects and functions used by those methods.
- *      B. It will be important to think of how to prevent already hit board positions from being selected by the neural net again. I think
- *         that this could be done by just using a temporary set of edge weights for making the decisions, while preserving the real edge weights in
- *         the edgeWeights variable. You would set the edgeWeight to zero for the decision-making edgeWeights for a given position (0 through 99) after
- *         you hit at a position
- *      C. In order to test the GA without any of the neural net index selection capabilities, I am using "indexes" to select indexes.
- *         All I am doing is pushing numbers 0 through 99 into that array, and then goign in order, 0 through 99, attackign each index.
- *      D. I am using setEdgeWeightsDummy to set initial edgeWeights so that I can test the GA code. I think you should replace my setEdgeWeightsDummy function
- *         calls with a real setEdgeWeights function. It should only be used at the beginning of the program when we dont have initial weights.
- *         Later on, after the first iteration, when we do have initial weights, we use the second constructor for the Players that takes the evolved
- *         edge weights as a parameter. 
- * 2. Check my Boltzmann calculation. I'm not using any kind of scale but I think that might be fine for what we are doing.
- * 3. Please also check my fitness calculation. It seemed pretty straight-forward to me but I'm a retard with math and math symbols
- * 4. In crossoverWrapper, do we want all those -1s? those were from oru original GA code.
+ *         //Test different metrics of "improvement" -- number of moves per game, fitness, ability against bots, etc.
  * 
- * TODOs:
- *  -verify that players are actually "winning" games by checking their boards to make sure that this.opponentBoard shows 1s covering the enemy's ships
- * 
+ *          //Test different things like mutation, crossover probability 
  * 
  *         //Important questions:
-            //What range of initial edge weights do we pick?
-            //How do we evolve when we have edge weights that are numbers in a range and not just 0 or 1?
+             //What range of initial edge weights do we pick?
+             //How do we evolve when we have edge weights that are numbers in a range and not just 0 or 1?
                 
  * 
  *********************************************************************************************************
@@ -51,26 +34,31 @@ public class Battleship {
      * @param args the command line arguments
      */
     public static Random rand = new Random();
-    public static double crossoverProbability = 0.00;
-    public static double mutationProbability = 0.00;
+    public static double crossoverProbability = 0;
+    public static double mutationProbability = 0;
+    
+    public static double moves = 0.0;
+    public static double numGames = 0;
+    
     
     public static int iter = 0;
     
-    public static void main(String[] args) {
+    public static void main(String[] args) {  
         
-        //We want to have each member of the parasite population play against each member of the host population.
-        //So, if we have 10 parasites and 10 hosts, we want them each to play against each other the same number of times.
-        //we want all this playing to happen before we perform any evolution so that we can accurately calculate the fitness
-        //
+        mutationProbability = 0.02;
+        crossoverProbability = 0.7;
+        int NUMBER_OF_TEAM_MEMBERS = 100;
+        int NUMBER_OF_ITERATIONS = 100;
         
-        wrapper();
+        
+        wrapper(NUMBER_OF_TEAM_MEMBERS, NUMBER_OF_ITERATIONS);
        
     }
     
-    public static void wrapper(){
+    public static void wrapper(int teamSize, int numIterations){
         
         //initialize hosts and parasites
-        int NUMBER_OF_TEAM_MEMBERS = 6;
+        int NUMBER_OF_TEAM_MEMBERS = teamSize;
         int iterationCounter = 0;
         
         ArrayList<Player> hosts = new ArrayList<Player>();
@@ -83,7 +71,7 @@ public class Battleship {
         }
        
         /* We give the hosts 10 chances to be hosts and 10 chances to be parasites, and we do the same for hte parasites */
-        while(iterationCounter < 100){
+        while(iterationCounter < numIterations){
             
             ArrayList<Player> temp = new ArrayList<Player>();
             
@@ -96,7 +84,12 @@ public class Battleship {
             
             
             playGamesForPopulations(hosts, parasites);
-            System.out.println("finished round " + iterationCounter + " of games");
+            if(iter % 1 == 0){
+                System.out.println("Average moves per game: " + moves / numGames);
+                moves = 0;
+                numGames = 0;
+            }
+
             ArrayList<ArrayList<Double>> newEdgeWeights = new ArrayList<ArrayList<Double>>();
             
             /* We evolve the host population to produce new edge weights. This includes mutation */
@@ -117,9 +110,6 @@ public class Battleship {
             iterationCounter+=1;
             iter+=1;
         }
-        
-        //See how we did after 20 iterations 
-        
         
     }
     
@@ -147,7 +137,7 @@ public class Battleship {
         for(int i = 0; i < hosts.size(); i++){
             for(int j = 0; j < parasites.size(); j++){
                     playGame(hosts.get(i), parasites.get(j), j);
-                    System.out.println("finished game " + i + "," + j);
+                    resetHostAndParasite(hosts.get(i), parasites.get(j));
                     //HERE I AM USING "Dummy indexes" that allow me to actually run the code. I have to reset the indexes after each iteration
                     //BEcause I pick the next index to attack by popping off an index in an array, and eventually if you dont reset the indexes
                     //You will get an out of bounds error after you hit all 100 of them.
@@ -158,6 +148,15 @@ public class Battleship {
         //at the end of this, all hosts have played against all parasites.
     }
     
+    public static void resetHostAndParasite(Player host, Player parasite){
+        host.setupOpponentBoard();
+        parasite.setupOpponentBoard();
+        host.resetNumberOfEnemyShipsRemaining();
+        parasite.resetNumberOfEnemyShipsRemaining();
+        host.resetPossibleOptionsToAttack();
+        parasite.resetPossibleOptionsToAttack();
+    }
+    
     /* This function first determines who goes first, then it has each player take turns getting an index and attacking
     their enemy
     */
@@ -165,13 +164,16 @@ public class Battleship {
 
         boolean noWinner = true;
         
+        int numParasiteAttacks = 0;
+        int numHostAttacks = 0;
+        
         String winner = "none";        
         //host attacks first
         if(rand.nextDouble() <= 0.5){
             while(noWinner){
                 
                 int hostAttackIndex = host.getAttackIndex();
-                System.out.println(hostAttackIndex);
+            //    System.out.println(hostAttackIndex);
                 //return -1 when all enemy ships are sunk;
                 if(hostAttackIndex == -1){
                     noWinner = false;
@@ -190,6 +192,7 @@ public class Battleship {
                     //if we didnt win, we have the host attack the parasite
                     //we need the else statement to avoid an out of bounds
                     host.attack(parasite, hostAttackIndex);
+                    numHostAttacks +=1;
                 }
               
                 //Everything else in this function is a similar but flipped case from the above.
@@ -201,14 +204,14 @@ public class Battleship {
                     break;
                 }
                 else{
-                parasite.attack(host, parasiteAttackIndex);
+                    parasite.attack(host, parasiteAttackIndex);
+                    numParasiteAttacks +=1;
                 }
             }
         }
         //parasite attacks first 
         else{
             while(noWinner){
-                
                 int parasiteAttackIndex = parasite.getAttackIndex();
                 
                 if(parasiteAttackIndex == -1){
@@ -218,6 +221,8 @@ public class Battleship {
                 }
                 else{
                     parasite.attack(host, parasiteAttackIndex);
+                                        numParasiteAttacks +=1;
+
                 }
                 
                 int hostAttackIndex = host.getAttackIndex();
@@ -230,41 +235,18 @@ public class Battleship {
                 }
                 else{
                     host.attack(parasite, hostAttackIndex);
+                    numHostAttacks+=1;
                 }
             }
         }
         
-        if(iter == 0){
-            System.out.println("WINNER: " + winner);
-            System.out.println("parasite board");
-            for(int i = 0; i < 10; i++){
-                for(int z = 0; z < 10; z++){
-                    System.out.print(parasite.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
-                }
-                System.out.print("\n");
-            }
-            System.out.println();
-            System.out.println("host opponent board");
-            
-            for(int i = 0; i < 10; i++){
-                for(int z = 0; z < 10; z++){
-                    if(host.getOpponentBoard().get(i*10 + z) == -1){
-                        System.out.print(2 + " " );
-                    }
-                    else{
-                      System.out.print(host.getOpponentBoard().get(i * 10 + z) + " ");
-
-                    }
-                }
-                System.out.print("\n");
-            }
-            
+        if(iter % 1 == 0){
+            numGames +=1;
+            moves += numHostAttacks;
+            moves += numParasiteAttacks;
         }
         
-        //added these here too - boyle
-        host.setupOpponentBoard();
-        parasite.setupOpponentBoard();
-     
+       
     }
     
     //I am assuming that we only evolve the hosts, which is what I think we should be doing based on paper
@@ -345,7 +327,7 @@ public class Battleship {
                     
 //size -1??
                     int crossPoint = rand.nextInt(breedingPool.size() );
-                    
+                                        
                     child1 = onePointCrossover(breedingPool.get(i).getEdgeWeights(), breedingPool.get(i + 1).getEdgeWeights(), crossPoint);
                     child2 = onePointCrossover(breedingPool.get(i+1).getEdgeWeights(), breedingPool.get(i).getEdgeWeights(), crossPoint);
             }
@@ -398,6 +380,8 @@ public class Battleship {
         double denom = 0;
         double scale = 2.0;
         
+        double sum = 0;
+        
         ArrayList<Double> efitness = new ArrayList();
         for(int i = 0; i< hostsToSelect.size(); i++){
           
@@ -406,7 +390,9 @@ public class Battleship {
             double eToPower = Math.exp(fitness);
             denom+= eToPower;
             efitness.add(eToPower);
+            sum += fitnessArray.get(i);
         }
+      //  System.out.println("AVE FIT: " + sum / hostsToSelect.size());
         ArrayList<Player> breedingPopulation = new ArrayList();
         
         int counter = 0;
@@ -422,7 +408,6 @@ public class Battleship {
               counter+=1;
             }
         }
-        System.out.println();
 
         return breedingPopulation;      
     }
@@ -457,3 +442,69 @@ public class Battleship {
         return fitnessArray;
     }
 }
+
+
+
+//    public static void printBoards(){
+//                if(iter % 10 == 0){
+//         System.out.println("num host attacks: " + numHostAttacks);
+//          System.out.println("num para attacks: " + numParasiteAttacks);
+//            
+//        }
+//        
+//        
+//        
+//        
+//        if(iter % 10 == 0){
+//            System.out.println("WINNER: " + winner);
+//            System.out.println("parasite board");
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    System.out.print(parasite.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
+//                }
+//                System.out.print("\n");
+//            }
+//            
+//            System.out.println();
+//            System.out.println("host opponent board");
+//            
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    if(host.getOpponentBoard().get(i*10 + z) == -1){
+//                        System.out.print(2 + " " );
+//                    }
+//                    else{
+//                      System.out.print(host.getOpponentBoard().get(i * 10 + z) + " ");
+//
+//                    }
+//                }
+//                System.out.print("\n");
+//            }
+//            
+//            System.out.println("host board");
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    System.out.print(host.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
+//                }
+//                System.out.print("\n");
+//            }
+//            System.out.println("\n");
+//            System.out.println("parasite opponent board");
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    if(parasite.getOpponentBoard().get(i*10 + z) == -1){
+//                        System.out.print(2 + " " );
+//                    }
+//                    else{
+//                      System.out.print(parasite.getOpponentBoard().get(i * 10 + z) + " ");
+//
+//                    }
+//                }
+//                System.out.print("\n");
+//            }
+//            
+//            
+//            
+//        }
+//        
+//    }

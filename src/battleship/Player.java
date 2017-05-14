@@ -206,7 +206,7 @@ public class Player {
     
     //In this function, I am not actually editing or changing the enemy board, JUST the host's understanding of the board.
     public void attack(Player target, int indexToAttackEnemy){
-        System.out.println("Attack");
+      //  System.out.println("Attack");
         //can be 0 or 1 since a player only has 0 or 1 for their own board
         int enemyStateAtPosition = target.getValueAtBoardIndex(indexToAttackEnemy);
         
@@ -240,6 +240,7 @@ public class Player {
         //boyle: if not empty
         if(!this.possibleAttackOptions.isEmpty()){
             int indexOfBestAttack = 0;
+         //   System.out.println(this + " " + this.possibleAttackOptions.size());
             int bestAttack = this.possibleAttackOptions.get(indexOfBestAttack);
             double bestAttackValue = this.outputList.get(bestAttack);
             for(int i = 1; i < this.possibleAttackOptions.size(); i++){
@@ -303,5 +304,9 @@ TESTING
             
             this.edgeWeights.add(randRange);
         }
+    }
+    
+    public void resetNumberOfEnemyShipsRemaining(){
+        this.numberOfEnemyShipSquaresRemaining = 17;
     }
 }
