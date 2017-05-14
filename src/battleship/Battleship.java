@@ -17,7 +17,7 @@ import java.util.Random;
  * THINGS TO LOOK AT 
  * 
  * 1. Add the Neural net functionality in the Player class
- *      A. This will involve making changes to the attack function, the getIndexToAttackFromNeuralNet function, and the various 
+ *      A. This will involve making changes to the attack function, the `AttackFromNeuralNet function, and the various 
  *         objects and functions used by those methods.
  *      B. It will be important to think of how to prevent already hit board positions from being selected by the neural net again. I think
  *         that this could be done by just using a temporary set of edge weights for making the decisions, while preserving the real edge weights in
@@ -54,6 +54,8 @@ public class Battleship {
     public static double crossoverProbability = 0.00;
     public static double mutationProbability = 0.00;
     
+    public static int iter = 0;
+    
     public static void main(String[] args) {
         
         //We want to have each member of the parasite population play against each member of the host population.
@@ -68,7 +70,7 @@ public class Battleship {
     public static void wrapper(){
         
         //initialize hosts and parasites
-        int NUMBER_OF_TEAM_MEMBERS = 10;
+        int NUMBER_OF_TEAM_MEMBERS = 6;
         int iterationCounter = 0;
         
         ArrayList<Player> hosts = new ArrayList<Player>();
@@ -81,7 +83,7 @@ public class Battleship {
         }
        
         /* We give the hosts 10 chances to be hosts and 10 chances to be parasites, and we do the same for hte parasites */
-        while(iterationCounter < 20){
+        while(iterationCounter < 100){
             
             ArrayList<Player> temp = new ArrayList<Player>();
             
@@ -113,6 +115,7 @@ public class Battleship {
             hosts = temp;
             
             iterationCounter+=1;
+            iter+=1;
         }
         
         //See how we did after 20 iterations 
@@ -162,23 +165,25 @@ public class Battleship {
 
         boolean noWinner = true;
         
+        String winner = "none";        
         //host attacks first
         if(rand.nextDouble() <= 0.5){
             while(noWinner){
                 
                 int hostAttackIndex = host.getAttackIndex();
-                
+                System.out.println(hostAttackIndex);
                 //return -1 when all enemy ships are sunk;
                 if(hostAttackIndex == -1){
                     noWinner = false;
                     
                     //if the parasite loses, we increment its loss counter. this is needed for fitness calculation
                     parasite.incrementLossCounterAsParasite();
-                    
+                    winner  = "host";
                     //since the host wins, we add the parasite's index to the victories array inside the host. 
                     //this is done so that we can easily iterate the parasites the host defeated when calculating fitness
                     
                     host.updateVictories(parasiteIndex);
+                    
                     break;
                 }
                 else{
@@ -191,6 +196,7 @@ public class Battleship {
                 int parasiteAttackIndex = parasite.getAttackIndex();
                 
                 if(parasiteAttackIndex == -1){
+                    winner = "par";
                     noWinner = false;
                     break;
                 }
@@ -206,6 +212,7 @@ public class Battleship {
                 int parasiteAttackIndex = parasite.getAttackIndex();
                 
                 if(parasiteAttackIndex == -1){
+                    winner = "par";
                     noWinner = false;
                     break;
                 }
@@ -216,6 +223,7 @@ public class Battleship {
                 int hostAttackIndex = host.getAttackIndex();
                 
                 if(hostAttackIndex == -1){
+                    winner = "host";
                     noWinner = false;
                     parasite.incrementLossCounterAsParasite();
                     host.updateVictories(parasiteIndex);
@@ -224,7 +232,39 @@ public class Battleship {
                     host.attack(parasite, hostAttackIndex);
                 }
             }
-        }   
+        }
+        
+        if(iter == 0){
+            System.out.println("WINNER: " + winner);
+            System.out.println("parasite board");
+            for(int i = 0; i < 10; i++){
+                for(int z = 0; z < 10; z++){
+                    System.out.print(parasite.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
+                }
+                System.out.print("\n");
+            }
+            System.out.println();
+            System.out.println("host opponent board");
+            
+            for(int i = 0; i < 10; i++){
+                for(int z = 0; z < 10; z++){
+                    if(host.getOpponentBoard().get(i*10 + z) == -1){
+                        System.out.print(2 + " " );
+                    }
+                    else{
+                      System.out.print(host.getOpponentBoard().get(i * 10 + z) + " ");
+
+                    }
+                }
+                System.out.print("\n");
+            }
+            
+        }
+        
+        //added these here too - boyle
+        host.setupOpponentBoard();
+        parasite.setupOpponentBoard();
+     
     }
     
     //I am assuming that we only evolve the hosts, which is what I think we should be doing based on paper
@@ -356,20 +396,17 @@ public class Battleship {
         //a proportion of if at all
         
         double denom = 0;
-        double scale = 100.0;
+        double scale = 2.0;
+        
         ArrayList<Double> efitness = new ArrayList();
         for(int i = 0; i< hostsToSelect.size(); i++){
-        
-
-        
+          
             double fitness = fitnessArray.get(i); // * 10;
-           // fitness *= scale;
-   
+            //fitness *= scale;   
             double eToPower = Math.exp(fitness);
             denom+= eToPower;
             efitness.add(eToPower);
-  }
-
+        }
         ArrayList<Player> breedingPopulation = new ArrayList();
         
         int counter = 0;
@@ -380,9 +417,7 @@ public class Battleship {
             double randomProbability =  (double)rand.nextInt()/ (double)Integer.MAX_VALUE;
 
             double numerator = efitness.get(randomIndex);
-             System.out.println(numerator / denom);
             if(randomProbability <= numerator/denom){
-              
               breedingPopulation.add(hostsToSelect.get(randomIndex));
               counter+=1;
             }

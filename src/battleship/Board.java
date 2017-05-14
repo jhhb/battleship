@@ -158,6 +158,7 @@ public class Board {
         for(int i = 0; i < this.gameBoard.size(); i++){
             for(int j = 0; j < this.gameBoard.get(i).size(); j++){
                 list.add(this.gameBoard.get(i).get(j));
+                
             }
             
         }

@@ -153,11 +153,11 @@ public class Player {
     //this method creates a new board of 100 0s or replaces the values already there if the board is not empty. 
     //uses 1-D array, NOT 2D
     
-    private List<Integer> getPlayerBoard(){
+    public List<Integer> getPlayerBoard(){
         return this.board.getSerializedBoard();
     }
     
-    private void setupOpponentBoard(){
+    public void setupOpponentBoard(){
         if(this.opponentBoard.isEmpty()){
             for(int i = 0; i < 100; i++){
                 this.opponentBoard.add(0);
@@ -179,7 +179,10 @@ public class Player {
     */
     public int getAttackIndex(){
         //this is a handy way to tell us when we have won--there are 0 spaces of the enemy left so we know we win.
+        
+        //boyle: just added the = 17 part which fixes a bug
         if(this.numberOfEnemyShipSquaresRemaining == 0){
+            this.numberOfEnemyShipSquaresRemaining = 17;
             return -1;
         }
         
@@ -189,12 +192,21 @@ public class Player {
         
     }
     
+    public Board getBoard(){
+        return this.board;
+    }
+    
+    public ArrayList<Integer> getOpponentBoard(){
+        return this.opponentBoard;
+    }
+    
+    
     //Attack gets called from the attacker and "attacks" a target with a given index.
     //The function assumes that the index it gets from the neural net is a valid one that has not already been hit.
     
     //In this function, I am not actually editing or changing the enemy board, JUST the host's understanding of the board.
     public void attack(Player target, int indexToAttackEnemy){
-        
+        System.out.println("Attack");
         //can be 0 or 1 since a player only has 0 or 1 for their own board
         int enemyStateAtPosition = target.getValueAtBoardIndex(indexToAttackEnemy);
         
