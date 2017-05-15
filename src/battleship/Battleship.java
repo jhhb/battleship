@@ -34,8 +34,8 @@ public class Battleship {
      * @param args the command line arguments
      */
     public static Random rand = new Random();
-    public static double crossoverProbability = 0;
-    public static double mutationProbability = 0;
+    public static double crossoverProbability = 0.0;
+    public static double mutationProbability = 0.5;
     
     public static double moves = 0.0;
     public static double numGames = 0;
@@ -44,9 +44,6 @@ public class Battleship {
     public static int iter = 0;
     
     public static void main(String[] args) {  
-        
-        mutationProbability = 0.02;
-        crossoverProbability = 0.7;
         int NUMBER_OF_TEAM_MEMBERS = 100;
         int NUMBER_OF_ITERATIONS = 100;
         
@@ -246,6 +243,68 @@ public class Battleship {
             moves += numParasiteAttacks;
         }
         
+//        if(iter % 10 == 0){
+//         System.out.println("num host attacks: " + numHostAttacks);
+//          System.out.println("num para attacks: " + numParasiteAttacks);
+//            
+//        }
+        
+        
+        
+        
+//        if(iter % 1 == 0){
+//            System.out.println("WINNER: " + winner);
+//            System.out.println("parasite board");
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    System.out.print(parasite.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
+//                }
+//                System.out.print("\n");
+//            }
+//            
+//            System.out.println();
+//            System.out.println("host opponent board");
+//            
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    if(host.getOpponentBoard().get(i*10 + z) == -1){
+//                        System.out.print(2 + " " );
+//                    }
+//                    else{
+//                      System.out.print(host.getOpponentBoard().get(i * 10 + z) + " ");
+//
+//                    }
+//                }
+//                System.out.print("\n");
+//            }
+//            
+//            System.out.println("host board");
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    System.out.print(host.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
+//                }
+//                System.out.print("\n");
+//            }
+//            System.out.println("\n");
+//            System.out.println("parasite opponent board");
+//            for(int i = 0; i < 10; i++){
+//                for(int z = 0; z < 10; z++){
+//                    if(parasite.getOpponentBoard().get(i*10 + z) == -1){
+//                        System.out.print(2 + " " );
+//                    }
+//                    else{
+//                      System.out.print(parasite.getOpponentBoard().get(i * 10 + z) + " ");
+//
+//                    }
+//                }
+//                System.out.print("\n");
+//            }
+//            
+//            
+//            
+//        }
+//        
+//        
        
     }
     
@@ -287,13 +346,13 @@ public class Battleship {
 
         for(int i = 0; i < edgeWeightsForPlayer.size(); i++){
             
-            double randomProbability = (double)rand.nextInt()/(double)Integer.MAX_VALUE;
+            double randomProbability = rand.nextDouble();  
             
             if(randomProbability <= mutationProbability){
                 
                 double edgeWeight = edgeWeightsForPlayer.get(i);
 
-                double increaseOrDecreaseProbability = (double)rand.nextInt() / (double)Integer.MAX_VALUE;
+                double increaseOrDecreaseProbability = rand.nextDouble(); 
                 
 		if(increaseOrDecreaseProbability <= 0.5){
                     edgeWeights.add(edgeWeight * 1.05);                    
@@ -322,8 +381,12 @@ public class Battleship {
         // -1? or nah?
         while(i < breedingPool.size() - 1){
 
-            double randomProbability = (double)rand.nextInt()/(double)Integer.MAX_VALUE;
+            double randomProbability = rand.nextDouble();
             if(randomProbability <= crossoverProbability){
+                
+                        //System.out.println(randomProbability);
+                        System.out.println(randomProbability);
+
                     
 //size -1??
                     int crossPoint = rand.nextInt(breedingPool.size() );
@@ -400,7 +463,7 @@ public class Battleship {
       //randomly select candidates.size() number of individuals for the vector 
         while(counter < hostsToSelect.size()) {
             int randomIndex = rand.nextInt(hostsToSelect.size());
-            double randomProbability =  (double)rand.nextInt()/ (double)Integer.MAX_VALUE;
+            double randomProbability = rand.nextDouble();
 
             double numerator = efitness.get(randomIndex);
             if(randomProbability <= numerator/denom){
@@ -446,65 +509,5 @@ public class Battleship {
 
 
 //    public static void printBoards(){
-//                if(iter % 10 == 0){
-//         System.out.println("num host attacks: " + numHostAttacks);
-//          System.out.println("num para attacks: " + numParasiteAttacks);
-//            
-//        }
-//        
-//        
-//        
-//        
-//        if(iter % 10 == 0){
-//            System.out.println("WINNER: " + winner);
-//            System.out.println("parasite board");
-//            for(int i = 0; i < 10; i++){
-//                for(int z = 0; z < 10; z++){
-//                    System.out.print(parasite.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
-//                }
-//                System.out.print("\n");
-//            }
-//            
-//            System.out.println();
-//            System.out.println("host opponent board");
-//            
-//            for(int i = 0; i < 10; i++){
-//                for(int z = 0; z < 10; z++){
-//                    if(host.getOpponentBoard().get(i*10 + z) == -1){
-//                        System.out.print(2 + " " );
-//                    }
-//                    else{
-//                      System.out.print(host.getOpponentBoard().get(i * 10 + z) + " ");
-//
-//                    }
-//                }
-//                System.out.print("\n");
-//            }
-//            
-//            System.out.println("host board");
-//            for(int i = 0; i < 10; i++){
-//                for(int z = 0; z < 10; z++){
-//                    System.out.print(host.getBoard().getSerializedBoard().get(i * 10 + z) + " ");
-//                }
-//                System.out.print("\n");
-//            }
-//            System.out.println("\n");
-//            System.out.println("parasite opponent board");
-//            for(int i = 0; i < 10; i++){
-//                for(int z = 0; z < 10; z++){
-//                    if(parasite.getOpponentBoard().get(i*10 + z) == -1){
-//                        System.out.print(2 + " " );
-//                    }
-//                    else{
-//                      System.out.print(parasite.getOpponentBoard().get(i * 10 + z) + " ");
-//
-//                    }
-//                }
-//                System.out.print("\n");
-//            }
-//            
-//            
-//            
-//        }
-//        
+//                
 //    }
