@@ -35,7 +35,7 @@ public class Battleship {
      */
     public static Random rand = new Random();
     public static double crossoverProbability = 0.0;
-    public static double mutationProbability = 0.5;
+    public static double mutationProbability = 0.3;
     
     public static double moves = 0.0;
     public static double numGames = 0;
@@ -45,7 +45,7 @@ public class Battleship {
     
     public static void main(String[] args) {  
         int NUMBER_OF_TEAM_MEMBERS = 100;
-        int NUMBER_OF_ITERATIONS = 100;
+        int NUMBER_OF_ITERATIONS = 1000;
         
         
         wrapper(NUMBER_OF_TEAM_MEMBERS, NUMBER_OF_ITERATIONS);
@@ -82,7 +82,7 @@ public class Battleship {
             
             playGamesForPopulations(hosts, parasites);
             if(iter % 1 == 0){
-                System.out.println("Average moves per game: " + moves / numGames);
+                System.out.print("Average moves per game: " + moves / numGames + "  ,  ");
                 moves = 0;
                 numGames = 0;
             }
@@ -164,10 +164,13 @@ public class Battleship {
         int numParasiteAttacks = 0;
         int numHostAttacks = 0;
         
-        String winner = "none";        
+        String winner = "none";  
+        
+        int numTurns = 0;
         //host attacks first
         if(rand.nextDouble() <= 0.5){
             while(noWinner){
+                numTurns++;
                 
                 int hostAttackIndex = host.getAttackIndex();
             //    System.out.println(hostAttackIndex);
@@ -182,6 +185,8 @@ public class Battleship {
                     //this is done so that we can easily iterate the parasites the host defeated when calculating fitness
                     
                     host.updateVictories(parasiteIndex);
+                    host.addNumMoves(numTurns);
+                    
                     
                     break;
                 }
@@ -198,6 +203,7 @@ public class Battleship {
                 if(parasiteAttackIndex == -1){
                     winner = "par";
                     noWinner = false;
+                    host.addNumMoves(100);
                     break;
                 }
                 else{
@@ -214,6 +220,7 @@ public class Battleship {
                 if(parasiteAttackIndex == -1){
                     winner = "par";
                     noWinner = false;
+                    host.addNumMoves(100);
                     break;
                 }
                 else{
@@ -233,6 +240,7 @@ public class Battleship {
                 else{
                     host.attack(parasite, hostAttackIndex);
                     numHostAttacks+=1;
+                    host.addNumMoves(numTurns);
                 }
             }
         }
@@ -385,7 +393,6 @@ public class Battleship {
             if(randomProbability <= crossoverProbability){
                 
                         //System.out.println(randomProbability);
-                        System.out.println(randomProbability);
 
                     
 //size -1??
@@ -447,28 +454,49 @@ public class Battleship {
         
         ArrayList<Double> efitness = new ArrayList();
         for(int i = 0; i< hostsToSelect.size(); i++){
-          
             double fitness = fitnessArray.get(i); // * 10;
+            //System.out.println(fitness);
             //fitness *= scale;   
             double eToPower = Math.exp(fitness);
             denom+= eToPower;
             efitness.add(eToPower);
-            sum += fitnessArray.get(i);
+            //sum += fitnessArray.get(i);
         }
+        
+        ArrayList<Double> probOfSelection = new ArrayList();
+        
+        for(int i = 0; i< hostsToSelect.size(); i++){      
+            probOfSelection.add(efitness.get(i)/denom);
+        }
+        
       //  System.out.println("AVE FIT: " + sum / hostsToSelect.size());
         ArrayList<Player> breedingPopulation = new ArrayList();
         
         int counter = 0;
 
       //randomly select candidates.size() number of individuals for the vector 
-        while(counter < hostsToSelect.size()) {
-            int randomIndex = rand.nextInt(hostsToSelect.size());
+//        while(counter < hostsToSelect.size()) {
+//            int randomIndex = rand.nextInt(hostsToSelect.size());
+//            double randomProbability = rand.nextDouble();
+//            //System.out.println("Test 1");
+//
+//            double numerator = efitness.get(randomIndex);
+//            if(randomProbability <= numerator/denom){
+//              breedingPopulation.add(hostsToSelect.get(randomIndex));
+//              counter+=1;
+//            //System.out.println("Incremented Counter");
+//            }
+//        }
+        
+        for(int i = 0; i < hostsToSelect.size(); i++){
             double randomProbability = rand.nextDouble();
-
-            double numerator = efitness.get(randomIndex);
-            if(randomProbability <= numerator/denom){
-              breedingPopulation.add(hostsToSelect.get(randomIndex));
-              counter+=1;
+            double runningSum = 0.0;
+            for(int j = 0; j < probOfSelection.size(); j++){
+                runningSum += probOfSelection.get(j);
+                if(randomProbability <= runningSum){
+                    breedingPopulation.add(hostsToSelect.get(j));
+                    j = probOfSelection.size();
+                }
             }
         }
 
@@ -490,18 +518,18 @@ public class Battleship {
     public static ArrayList<Double> calculateFitnessForHosts(ArrayList<Player> hosts, ArrayList<Player> parasites){
         
         ArrayList<Double> fitnessArray = new ArrayList<Double>();
+        double bestNumMoves = 100000.0;
         
         for(int i = 0; i < hosts.size(); i++){
-            double runningSumForFitness = 0.0;
-            for(int j = 0; j < hosts.get(i).getVictories().size(); j++){
-                
-                //loss counter is cast to a double
-                runningSumForFitness += 1.00 / parasites.get(hosts.get(i).getVictories().get(j)).getLossCounterAsParasite();
-                
-            }
-            fitnessArray.add(runningSumForFitness);
+            //System.out.println((10000 - hosts.get(i).getNumMoves())/500.0);
+            double numMoves = hosts.get(i).getNumMoves();
+            fitnessArray.add((10000 - numMoves)/500.0);
             
+            if (numMoves < bestNumMoves) {
+                bestNumMoves = numMoves;
+            }  
         }
+        System.out.println("lowest average turns = " + bestNumMoves/100);
         return fitnessArray;
     }
 }

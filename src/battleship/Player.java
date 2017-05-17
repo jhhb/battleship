@@ -18,6 +18,7 @@ public class Player {
     private Board board = new Board();
     private List<Integer> playerBoard = new ArrayList<Integer>();
     private ArrayList<Integer> opponentBoard = new ArrayList<Integer>();
+    private final int NUMBER_OF_SQUARES = 100;
     
     private final int NUMBER_OF_PARASITES = 25;
     //array that stores the index of defeated parasites based 
@@ -48,6 +49,8 @@ public class Player {
     private ArrayList<Double> outputList = new ArrayList();
     
     private ArrayList<Integer> possibleAttackOptions = new ArrayList();
+    
+    private int numMoves;
 
         
     public Player(){
@@ -64,7 +67,7 @@ public class Player {
         this.makeEdgeMap();
         this.initOutputList();
         this.initPossibleOptionsToAttack();
-        updateOutputListAfterAttacking(100); // update output list for the bias node
+        updateOutputListAfterAttacking(NUMBER_OF_SQUARES); // update output list for the bias node
         
     }
     
@@ -79,7 +82,7 @@ public class Player {
         this.makeEdgeMap();
         this.initOutputList();
         this.initPossibleOptionsToAttack();
-        updateOutputListAfterAttacking(100); // update output list for the bias node
+        updateOutputListAfterAttacking(NUMBER_OF_SQUARES); // update output list for the bias node
         
         
         /*  
@@ -89,9 +92,17 @@ public class Player {
         */       
     }
     
+    public int getNumMoves(){
+        return this.numMoves;
+    }
+    
+    public void addNumMoves(int i){
+        this.numMoves += i;
+    }
+    
     public void resetPossibleOptionsToAttack(){
         ArrayList<Integer> temp = new ArrayList<>();
-        for(int i = 0; i < 100; i++){
+        for(int i = 0; i < NUMBER_OF_SQUARES; i++){
             temp.add(i);
         }
         this.possibleAttackOptions = temp;
@@ -99,7 +110,7 @@ public class Player {
     
     private void initPossibleOptionsToAttack(){
         ArrayList<Integer> temp = new ArrayList<>();
-        for(int i = 0; i < 100; i++){
+        for(int i = 0; i < NUMBER_OF_SQUARES; i++){
             temp.add(i);
         }
         this.possibleAttackOptions = temp;
@@ -108,14 +119,14 @@ public class Player {
     private void updateOutputListAfterAttacking(int i){
         //i = previously attacked square
         double afterAttackValue = 0.0;
-        if(i == 100){   //bias node
+        if(i == NUMBER_OF_SQUARES){   //bias node
             afterAttackValue = 1;
         }else{
             afterAttackValue = this.opponentBoard.get(i);
         }
         
         //JB: Is this right
-        for(int j = 0; j < 100; j++){
+        for(int j = 0; j < NUMBER_OF_SQUARES; j++){
             double newValue = afterAttackValue * this.edgeMap.get(i).get(j);
             this.outputList.set(j, newValue);
         }
@@ -123,17 +134,17 @@ public class Player {
     
     private void initOutputList(){
         ArrayList<Double> temp = new ArrayList<>();
-        for(int i = 0; i < 100; i++){
+        for(int i = 0; i < NUMBER_OF_SQUARES; i++){
             temp.add(0.0);
         }
         this.outputList = temp;
     }
     
     private void makeEdgeMap(){
-        for(int i = 0; i < 101; i++){ //PLACEHOLDER INT (includes bias node)
+        for(int i = 0; i < NUMBER_OF_SQUARES + 1; i++){ //PLACEHOLDER INT (includes bias node)
             ArrayList<Double> temp = new ArrayList<>();
-            for(int j = 0; j < 100; j++){
-                temp.add(this.edgeWeights.get(i*100 + j));
+            for(int j = 0; j < NUMBER_OF_SQUARES; j++){
+                temp.add(this.edgeWeights.get(i*NUMBER_OF_SQUARES + j));
             }
             this.edgeMap.add(temp);
         }
@@ -159,12 +170,12 @@ public class Player {
     
     public void setupOpponentBoard(){
         if(this.opponentBoard.isEmpty()){
-            for(int i = 0; i < 100; i++){
+            for(int i = 0; i < NUMBER_OF_SQUARES; i++){
                 this.opponentBoard.add(0);
             }
         }
         else{
-            for(int i = 0; i < 100; i++){
+            for(int i = 0; i < NUMBER_OF_SQUARES; i++){
                 this.opponentBoard.set(i, 0);
             }
         }
@@ -297,7 +308,7 @@ TESTING
     
     public void setEdgeWeightsDummy(){
         
-        for(int i = 0; i < 10100; i++){  //total number of edges (101*100) ==> ((num inputs + bias node) * num outputs)
+        for(int i = 0; i < NUMBER_OF_SQUARES * (NUMBER_OF_SQUARES+ 1); i++){  //total number of edges (101*100) ==> ((num inputs + bias node) * num outputs)
             
             double randRange = -1 + (1 - -1) * rand.nextDouble();
             
